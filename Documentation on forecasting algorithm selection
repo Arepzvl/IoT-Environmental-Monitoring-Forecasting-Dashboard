@@ -1,0 +1,257 @@
+# Forecasting Algorithm Selection
+
+## 1. Introduction
+
+This documentation explains the research, comparison and selection of forecasting algorithms for the IoT Sensor Data Forecasting System.
+
+The system collects environmental temperature and humidity readings using an ESP32 microcontroller and a DHT11 sensor. Two forecasting techniques were studied to determine a suitable method for predicting future sensor readings:
+
+- Simple Moving Average (SMA)
+- Exponential Moving Average (EMA)
+
+## 2. Simple Moving Average (SMA)
+
+### 2.1 Basic Principle
+
+Simple Moving Average calculates the average of a selected number of historical observations. All observations within the selected window are assigned equal weights.
+
+Formula:
+
+SMA = (X₁ + X₂ + ... + Xₙ) / n
+
+Where:
+
+- X = Historical sensor reading
+- n = Number of observations
+
+### 2.2 Strengths
+
+- Simple to understand and implement.
+- Requires low computational resources.
+- Reduces short-term fluctuations in sensor readings.
+
+### 2.3 Limitations
+
+- Assigns equal weight to all observations within the selected window.
+- May respond slowly to sudden environmental changes.
+- Forecasting performance depends on the selected window size.
+
+### 2.4 Suitability
+
+SMA is suitable for monitoring temperature and humidity under relatively stable environmental conditions. However, its equal weighting approach may limit its ability to adapt to changing environmental conditions.
+
+## 3. Exponential Moving Average (EMA)
+
+### 3.1 Basic Principle
+
+Exponential Moving Average assigns greater weight to recent observations while gradually reducing the influence of older observations.
+
+Formula:
+
+EMAₜ = αXₜ + (1 − α)EMAₜ₋₁
+
+Where:
+
+- EMAₜ = Current EMA value
+- Xₜ = Current sensor reading
+- EMAₜ₋₁ = Previous EMA value
+- α = Smoothing factor
+
+### 3.2 Strengths
+
+- Gives greater importance to recent sensor readings.
+- Reduces short-term fluctuations.
+- Requires low computational resources.
+- Can be implemented efficiently using Google Apps Script.
+
+### 3.3 Limitations
+
+- Forecasting performance depends on the selected smoothing factor.
+- A small smoothing factor may respond slowly to sudden changes.
+- Basic EMA does not directly model trends or seasonal patterns.
+
+### 3.4 Suitability
+
+EMA is suitable for environmental temperature and humidity monitoring because sensor readings continuously change according to surrounding conditions. Its exponential weighting provides a practical approach to smoothing historical sensor data.
+
+## 4. Algorithm Comparison
+
+### Simple Moving Average (SMA)
+
+- Data weighting: Equal weighting.
+- Recent data importance: Equal within the selected window.
+- Main parameter: Window size.
+- Computational requirement: Low.
+- Implementation complexity: Simple.
+- Response to changes: Depends on the selected window size.
+
+### Exponential Moving Average (EMA)
+
+- Data weighting: Exponential weighting.
+- Recent data importance: Higher importance.
+- Main parameter: Smoothing factor.
+- Computational requirement: Low.
+- Implementation complexity: Simple.
+- Response to changes: Depends on the selected smoothing factor.
+
+Both algorithms are suitable for basic environmental sensor forecasting. However, EMA provides greater flexibility in controlling the influence of recent observations through its smoothing factor.
+
+## 5. Selected Forecasting Algorithm
+
+Exponential Moving Average (EMA) was selected as the forecasting algorithm for this project.
+
+The selection was based on the following considerations:
+
+- Greater importance is assigned to recent sensor observations.
+- Short-term temperature and humidity fluctuations can be reduced.
+- The algorithm can be implemented efficiently using Google Apps Script.
+- The implementation does not require additional forecasting libraries.
+- The algorithm supports regular forecast updates with low computational requirements.
+
+A smoothing factor of 0.02 was selected for both temperature and humidity to produce stable forecasts.
+
+The implemented equation is:
+
+EMAₜ = 0.02Xₜ + 0.98EMAₜ₋₁
+
+The current sensor reading contributes 2% to the updated EMA value, while the previous EMA contributes 98%.
+
+This parameter was selected as a practical configuration and has not been proven to be the optimal smoothing factor.
+
+## 6. Mathematical Calculation Example
+
+The following example illustrates how the EMA algorithm calculates an updated temperature forecast.
+
+- Previous EMA: 30.50°C
+- Current temperature reading: 31.20°C
+- Smoothing factor: 0.02
+
+Calculation:
+
+EMA = (0.02 × 31.20) + (0.98 × 30.50)
+
+EMA = 0.624 + 29.89
+
+EMA = 30.514°C
+
+The updated forecasted temperature is approximately 30.51°C.
+
+This example demonstrates how EMA gradually adjusts the predicted value without allowing a single new observation to significantly affect the forecast.
+
+## 7. Historical Data Selection
+
+Historical humidity readings showed a significant change between 13 and 14 November 2026 following changes in the sensor's operating environment.
+
+To reduce the influence of earlier environmental conditions, the forecasting algorithm processes historical readings starting from:
+
+13 November 2026, 23:40:42 (Malaysia Time).
+
+This allows the forecasting process to focus on data that better represents the current operating environment.
+
+Invalid sensor readings are also excluded before performing the EMA calculation.
+
+## 8. Forecasting Configuration
+
+The forecasting algorithm uses the following configuration:
+
+- Selected algorithm: Exponential Moving Average (EMA).
+- Temperature smoothing factor: 0.02.
+- Humidity smoothing factor: 0.02.
+- Sensor sampling interval: 10 minutes.
+- Forecast update interval: 10 minutes.
+- Forecast horizon: 24 hours.
+- Forecast resolution: 1 hour.
+- Estimated forecast bounds: ±10%.
+- Execution method: Automatic and manual.
+
+The basic EMA model generates constant predicted values throughout each 24-hour forecast horizon because trend and seasonal components are not included.
+
+Forecast values are recalculated using the latest available historical readings.
+
+## 9. Algorithm Implementation
+
+The forecasting algorithm is implemented using Google Apps Script.
+
+The implementation consists of the following steps:
+
+1. Retrieve historical temperature and humidity readings from Google Sheets.
+2. Filter invalid readings and exclude data before the selected starting timestamp.
+3. Arrange valid historical readings in chronological order.
+4. Initialize the EMA using the first valid observation.
+5. Calculate EMA values separately for temperature and humidity.
+6. Generate 24 hourly predictions.
+7. Calculate the estimated upper and lower forecast bounds.
+8. Store the generated predictions in the Forecasts worksheet.
+9. Record the first-hour prediction in the Forecast_History worksheet for performance evaluation.
+
+A time-driven trigger automatically executes the forecasting function every 10 minutes.
+
+The forecasting function can also be executed manually through the EMA Forecasting custom menu in Google Sheets.
+
+## 10. Estimated Forecast Bounds
+
+The estimated upper and lower bounds are calculated using the following equations:
+
+Upper Bound = Forecast Value × 1.10
+
+Lower Bound = Forecast Value × 0.90
+
+For example, assuming the forecasted temperature is 30.90°C:
+
+- Upper Bound = 30.90 × 1.10 = 33.99°C
+- Lower Bound = 30.90 × 0.90 = 27.81°C
+
+Humidity bounds are limited to the valid range of 0% to 100%.
+
+These bounds provide a simple visual reference for possible variations in environmental conditions.
+
+However, they are percentage-based estimates and are not statistically calculated confidence intervals.
+
+## 11. Forecast Performance Evaluation
+
+Mean Absolute Error (MAE) is used to evaluate the performance of the forecasting algorithm.
+
+Formula:
+
+MAE = Σ|Actual Value − Forecast Value| / n
+
+Where:
+
+- Actual Value = Recorded sensor reading.
+- Forecast Value = Predicted sensor reading.
+- n = Number of valid matched observations.
+
+Previous one-hour-ahead predictions are stored in the Forecast_History worksheet and matched with the nearest actual sensor readings within a tolerance of ±5 minutes.
+
+Absolute errors are calculated using Google Sheets formulas and visualized through Google Looker Studio.
+
+The recorded performance results are:
+
+- Temperature MAE: 0.43°C.
+- Humidity MAE: 1.63 percentage points.
+
+The temperature MAE indicates that the evaluated temperature predictions differed from the corresponding actual readings by an average absolute value of 0.43°C.
+
+Similarly, the humidity MAE indicates an average absolute difference of 1.63 percentage points.
+
+These results represent the available evaluated one-hour-ahead predictions and do not represent the forecasting accuracy of the entire 24-hour forecast horizon.
+
+## 12. Future Improvements
+
+Several improvements can be considered to enhance forecasting performance:
+
+- Evaluate different smoothing factors to identify a more suitable EMA parameter.
+- Implement advanced forecasting algorithms that consider trends and seasonal patterns.
+- Improve sensor accuracy through calibration or higher-accuracy sensors.
+- Replace fixed percentage-based bounds with statistically calculated prediction intervals.
+- Collect more historical forecast records for long-term performance evaluation.
+
+## 13. Conclusion
+
+Exponential Moving Average was selected because of its simple implementation, low computational requirements and ability to assign greater importance to recent sensor readings.
+
+The implemented algorithm provides a functional forecasting solution for environmental temperature and humidity monitoring using ESP32, Google Apps Script, Google Sheets and Google Looker Studio.
+
+The recorded forecasting results demonstrate the practical implementation of EMA for environmental sensor data forecasting.
+
+Further improvements in parameter optimization, sensor accuracy and forecasting techniques may enhance the reliability and performance of the system.
